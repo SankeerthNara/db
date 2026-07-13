@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-07-13
+### Added
+- Real schema diff between branches via `db branch diff` — connects to both branches and compares information_schema tables and columns, detecting added/removed/modified tables and column changes (#1)
+- Enhanced `db ci setup` workflow with weekly cron cleanup for orphaned preview branches (#2)
+
+### Changed
+- Generated CI workflow now includes NEON_PROJECT_ID in teardown step
+
+### Dependencies
+- Bumped ora to 9.4.1 (#33)
+- Bumped conf to 15.1.0 (#32)
+- Bumped dotenv to 17.4.2 (#31)
+- Added pg (node-postgres) for database connections
+
 ## [0.1.3] - 2026-07-13
 ### Added
 - Added v0.1.2 changelog entry to CHANGELOG.md
@@ -53,7 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `db auth status` — show current auth status
 - Persistent configuration via `conf`, stored at `~/.config/in3pire-db/config.json` and validated with Zod (`NEON_API_KEY`, `NEON_PROJECT_ID`, `default_branch`), with `.env` support via `dotenv`
 
-[Unreleased]: https://github.com/IN3PIRE/db/compare/v0.1.3...main
+[Unreleased]: https://github.com/IN3PIRE/db/compare/v0.1.4...main
+[0.1.4]: https://github.com/IN3PIRE/db/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/IN3PIRE/db/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/IN3PIRE/db/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/IN3PIRE/db/compare/v0.1.0...v0.1.1
