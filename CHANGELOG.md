@@ -6,9 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Changed
-- Clarified installation docs for GitHub Packages-only distribution
+
+## [0.1.2] - 2026-07-12
+### Added
+- Added CHANGELOG.md to track project releases and version history
 - Added CONTRIBUTING.md with development setup and PR guidelines
+- NPM cache, shared client helpers, branch validation, and unit tests
+
+### Changed
+- Clarified installation docs for GitHub Packages-only distribution (no public npm registry)
+
+### Fixed
+- Resolved branch validation edge cases with improved error handling
 
 ## [0.1.1] - 2026-07-07
 ### Fixed
@@ -40,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `db auth status` — show current auth status
 - Persistent configuration via `conf`, stored at `~/.config/in3pire-db/config.json` and validated with Zod (`NEON_API_KEY`, `NEON_PROJECT_ID`, `default_branch`), with `.env` support via `dotenv`
 
-[Unreleased]: https://github.com/IN3PIRE/db/compare/v0.1.1...main
+[Unreleased]: https://github.com/IN3PIRE/db/compare/v0.1.2...main
+[0.1.2]: https://github.com/IN3PIRE/db/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/IN3PIRE/db/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/IN3PIRE/db/releases/tag/v0.1.0
