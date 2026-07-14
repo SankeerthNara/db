@@ -24,19 +24,35 @@ db branch create feat/awesome-feature
 # Diff two branches
 db branch diff feat/awesome-feature main
 
+# Merge schema changes into main
+db branch merge feat/awesome-feature main
+
 # Clean up when done
 db branch delete feat/awesome-feature
 ```
 
 ## Features
 
-- **🔀 Git-like branching** — `db branch create`, `db branch list`, `db branch delete`
+- **🔀 Git-like branching** — `db branch create`, `db branch list`, `db branch delete`, `db branch rename`
+- **🛡 Branch protection** — Protect critical branches from accidental deletion or rename
+- **🏷 Branch tagging** — Tag branches with labels for easy identification
 - **📊 Schema diff** — See what changed between branches before merging
+- **🔀 Schema merge** — Merge schema changes from one branch into another with `--dry-run`
+- **📋 Full schema view** — `db branch schema` shows tables, columns, types, nullability, defaults, indexes
+- **🔗 Auto-connect** — Print connection strings for any branch
+- **🔁 Git branch sync** — Auto-create Neon branches from your Git branches
+- **🔧 Multi-project** — Manage multiple Neon projects with `db project`
+- **⚙ Config management** — View and set config via CLI with `db config`
+- **🔬 Inline queries** — Run SQL against any branch with `db query`
+- **📤 Export** — Export branch schema and data to SQL files
+- **💾 Seed** — Populate branches from SQL files
+- **🧹 Cleanup** — Auto-delete stale branches and prune old preview branches
 - **🔗 CI/CD integration** — Spin up ephemeral branches for PR preview environments
-- **⚡ Auto-connect** — Print connection strings for any branch
-- **🧹 Cleanup** — Auto-delete stale branches
+- **📋 JSON output** — `--json` flag on `db branch list` and `db branch schema` for programmatic consumption
+- **📝 Audit log** — Local operation history with `db log`
+- **👁 Live watch** — Real-time branch monitoring with `db watch`
 - **🎯 Branch validation** — Branch names validated on creation (alphanumeric start, safe characters only)
-- **📋 JSON output** — `--json` flag on `db branch list` for programmatic consumption
+- **⚡ Shell completions** — Generate bash and zsh completions
 
 ## Installation
 
@@ -64,7 +80,7 @@ npm install -g @in3pire/db
 ### Run directly (from release tarball, no install needed)
 
 ```bash
-npx https://github.com/IN3PIRE/db/releases/download/v0.1.2/in3pire-db-0.1.2.tgz --help
+npx https://github.com/IN3PIRE/db/releases/download/v0.3.0/in3pire-db-0.3.0.tgz --help
 ```
 
 ## Quick Start
@@ -81,6 +97,12 @@ db branch create my-feature --from main
 
 # Get the connection string
 db connect my-feature
+
+# Show schema
+db branch schema my-feature
+
+# Merge back when ready
+db branch merge my-feature main
 ```
 
 ## Usage
@@ -92,6 +114,7 @@ db connect my-feature
 | `db auth login` | Store your Neon API key (prompts interactively or reads stdin) |
 | `db auth status` | Show whether an API key is configured |
 | `db auth logout` | Remove stored credentials |
+| `db auth set-project <id>` | Set default project ID |
 
 ```bash
 # Login with your Neon API key
@@ -108,78 +131,236 @@ db auth logout
 
 | Command | Description | Options |
 |---|---|---|
-| `db branch list` | List all branches in a project | `-p, --project <id>` — Project ID (overrides config) |
-| | | `--json` — Output as JSON (no spinner, full field names) |
-| `db branch create <name>` | Create a new branch | `--from <branch>` — Parent branch (default: `main`) |
-| | | `--latest` — Create from the latest snapshot |
-| | | `-p, --project <id>` — Project ID |
-| `db branch rename <old> <new>` | Rename a branch | `-p, --project <id>` — Project ID |
-| `db branch delete <name>` | Delete a branch (with confirmation prompt) | `-y, --yes` — Skip confirmation |
-| | | `-p, --project <id>` — Project ID |
-| `db branch inspect <name>` | Show detailed branch info (size, LSN, timestamps) | `-p, --project <id>` — Project ID |
-| `db branch diff <a> <b>` | Show schema diff between two branches | `-p, --project <id>` — Project ID |
+| `db branch list` | List all branches | `-p, --project <id>`, `--json`, `--tags` |
+| `db branch create <name>` | Create a new branch | `--from <branch>`, `--latest`, `-p, --project <id>` |
+| `db branch rename <old> <new>` | Rename a branch | `-p, --project <id>` |
+| `db branch delete <name>` | Delete a branch | `-f, --force`, `-p, --project <id>` |
+| `db branch inspect <name>` | Show branch details | `-p, --project <id>` |
+| `db branch protect <name>` | Protect from deletion/rename | `-p, --project <id>` |
+| `db branch unprotect <name>` | Remove protection | `-p, --project <id>` |
+| `db branch tag <name> <tag>` | Tag a branch with a label | `-p, --project <id>` |
+| `db branch untag <name>` | Remove a tag | `-p, --project <id>` |
+| `db branch set-default <name>` | Set as project default | `-p, --project <id>` |
+| `db branch set-expiration <name> <date\|never>` | Set TTL on branch | `-p, --project <id>` |
 
 ```bash
 # List all branches
 db branch list
-
-# List all branches as JSON
-db branch list --json
+db branch list --json        # machine-readable
+db branch list --tags        # show local tags
 
 # Create a branch
 db branch create <name>
-db branch create <name> --from <parent-branch>    # default: main
-db branch create <name> --latest                   # use latest snapshot
+db branch create <name> --from <parent-branch>
+db branch create <name> --latest
 
-# Delete a branch
+# Protect/unprotect
+db branch protect main
+db branch unprotect main
+
+# Tagging
+db branch tag main production
+db branch untag main
+
+# Make a branch the project default
+db branch set-default staging
+
+# Set a branch to auto-delete in 7 days
+db branch set-expiration feat/experiment 2026-07-22T00:00:00Z
+db branch set-expiration feat/experiment never    # clear expiration
+
+# Delete
 db branch delete <name>
+db branch delete <name> --force    # skip confirmation
 
-# Rename a branch
+# Rename
 db branch rename <old-name> <new-name>
 ```
 
-### Diff & Inspect
+### Schema & Diff
+
+| Command | Description | Options |
+|---|---|---|
+| `db branch diff <a> [b]` | Schema diff between branches | `-p, --project <id>`, `--schema <schema>` |
+| `db branch schema <name>` | Show full schema (tables, columns, indexes) | `-p, --project <id>`, `--schema <schema>`, `--json` |
+| `db branch tables <name>` | List tables in a branch | `-p, --project <id>`, `--schema <schema>` |
+| `db branch merge <source> <target>` | Merge schema changes into target | `-p, --project <id>`, `--schema <schema>`, `--dry-run` |
 
 ```bash
-# Show schema diff between branches
-db branch diff <branch-a> <branch-b>
+# Show schema diff between two branches
+db branch diff feat/awesome main
 
-# Show branch details (size, LSN, created)
-db branch inspect <name>
+# Show full schema
+db branch schema main
+db branch schema main --json
+db branch schema main --schema custom_schema
+
+# List tables
+db branch tables feat/awesome
+
+# Merge schema changes (with dry-run first)
+db branch merge feat/awesome main --dry-run
+db branch merge feat/awesome main
 ```
 
 ### Connect
 
 | Command | Description | Options |
 |---|---|---|
-| `db connect <branch>` | Get a PostgreSQL connection string for the branch | `--pooled` — Use pooled connection string |
-| | | `--role <name>` — Database role (default: the branch's primary role) |
-| | | `-p, --project <id>` — Project ID |
+| `db connect <branch>` | Get a PostgreSQL connection string | `--pooled`, `-p, --project <id>` |
 
 ```bash
 # Get connection string for a branch
 db connect <branch-name>
-db connect <branch-name> --pooled    # use pooled connection
+db connect <branch-name> --pooled
+```
+
+### Project Management
+
+| Command | Description |
+|---|---|
+| `db project list` | List all Neon projects |
+| `db project switch <id>` | Switch default project |
+| `db project current` | Show current project |
+| `db project inspect` | Show project details |
+
+```bash
+db project list
+db project switch <project-id>
+db project current
+db project inspect
+```
+
+### Config
+
+| Command | Description |
+|---|---|
+| `db config list` | Show all configuration values |
+| `db config get <key>` | Get a specific config value |
+| `db config set <key> <value>` | Set a config value |
+
+```bash
+db config list
+db config get NEON_PROJECT_ID
+db config set default_branch staging
+```
+
+### Query & Export
+
+| Command | Description | Options |
+|---|---|---|
+| `db query <branch> <sql>` | Run SQL against a branch | `--json`, `--limit <n>`, `-p, --project <id>` |
+| `db export <branch>` | Export schema to SQL file | `-o, --output <file>`, `--data`, `--schema <schema>`, `-p, --project <id>` |
+
+```bash
+# Run a query
+db query main "SELECT * FROM users"
+db query main "SELECT * FROM users" --json
+db query main "SELECT * FROM users" --limit 10
+
+# Export schema to file
+db export main -o schema.sql
+db export main -o full.sql --data
+```
+
+### Git Sync
+
+| Command | Description | Options |
+|---|---|---|
+| `db git sync` | Create Neon branches for Git branches | `--prefix <prefix>`, `--prune`, `--dry-run`, `-p, --project <id>` |
+| `db git status` | Show Git ↔ Neon branch mapping | `--prefix <prefix>`, `-p, --project <id>` |
+
+```bash
+# Sync: creates git-<branch> Neon branches for each local Git branch
+db git sync
+db git sync --prefix feat-
+db git sync --prune              # delete orphaned Neon branches
+db git sync --dry-run            # preview only
+
+# Show mapping
+db git status
+```
+
+### Seed & Prune
+
+| Command | Description | Options |
+|---|---|---|
+| `db seed <branch> <file>` | Seed branch from SQL file | `--drop-first`, `-p, --project <id>` |
+| `db prune` | Bulk delete stale branches | `--older-than <days>`, `--except <names...>`, `--dry-run`, `--force`, `-p, --project <id>` |
+
+```bash
+# Seed a branch with data
+db seed staging ./seed.sql
+db seed staging ./seed.sql --drop-first    # drop tables first
+
+# Prune stale branches (not modified in 30 days)
+db prune
+db prune --older-than 14
+db prune --older-than 30 --except main staging
+db prune --dry-run          # see what would be deleted
+db prune --force            # skip confirmation
 ```
 
 ### CI / Preview Environments
 
 | Command | Description | Options |
 |---|---|---|
-| `db ci preview <pr-number>` | Create an ephemeral branch for a PR | `-p, --project <id>` — Project ID |
-| `db ci cleanup` | Remove stale preview branches | `--days <n>` — Max age in days (default: 7) |
-| | | `-p, --project <id>` — Project ID |
-| `db ci setup` | Generate a GitHub Actions workflow file | See output for generated YAML |
+| `db ci preview <pr-number>` | Create ephemeral PR branch | `-p, --project <id>`, `-f, --from <branch>` |
+| `db ci cleanup` | Delete stale preview branches | `--days <n>`, `--dry-run`, `-p, --project <id>` |
+| `db ci setup` | Generate GitHub Actions workflow | — |
 
 ```bash
-# Create an ephemeral branch for a PR (auto-delete after merge)
-db ci preview <pr-number>
+# Create an ephemeral branch for a PR
+db ci preview 42
 
 # Clean up stale preview branches
 db ci cleanup --days 7
+db ci cleanup --dry-run
 
-# Set up a GitHub Action workflow
-db ci setup
+# Generate a CI workflow
+db ci setup > .github/workflows/db-preview.yml
+```
+
+### Restore & Reset
+
+| Command | Description | Options |
+|---|---|---|
+| `db restore <branch> [name]` | Create a restore point | `--from <branch>`, `-p, --project <id>` |
+| `db reset <branch>` | Reset branch to match another | `--to <branch>`, `--force`, `-p, --project <id>` |
+
+```bash
+# Create a restore point before making changes
+db restore main pre-migration-backup
+
+# Reset a branch to match main
+db reset feat/experiment --to main
+db reset feat/experiment --to main --force
+```
+
+### Monitoring & Logs
+
+| Command | Description | Options |
+|---|---|---|
+| `db log show` | Show operation history | `--json`, `-n, --number <n>` |
+| `db log clear` | Clear history | — |
+| `db watch` | Watch branches in real-time | `-i, --interval <s>`, `-n, --number <n>`, `-p, --project <id>` |
+
+```bash
+# View branch operation history
+db log show
+db log show --json
+db log show -n 10
+
+# Watch branches (poll every 5 seconds)
+db watch
+db watch --interval 2    # poll every 2 seconds
+```
+
+### Shell Completions
+
+```bash
+db completion bash > /usr/local/etc/bash_completion.d/db
+db completion zsh > /usr/local/share/zsh/site-functions/_db
 ```
 
 ### Branch Name Rules
