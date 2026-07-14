@@ -7,7 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.4] - 2026-07-13
+## [0.2.0] - 2026-07-14
+### Added
+- **`db config`** — Manage local configuration with `list`, `get`, `set` subcommands
+- **`db project`** — Multi-project support with `list`, `switch`, `current`, `inspect` subcommands
+- **`db branch protect/unprotect`** — Protect branches from accidental deletion or rename
+- **`db branch tag/untag`** — Tag branches with labels for easier identification
+- **`db branch tables`** — List all tables in a branch
+- **`db branch merge`** — Merge schema changes from source branch into target branch (with `--dry-run`)
+- **`db restore`** — Create restore points by branching from existing branches
+- **`db reset`** — Reset a branch by recreating it from another branch (delete + recreate)
+- **`db export`** — Export branch schema to a SQL file (with `--data` flag for INSERT data)
+- **`db query`** — Run ad-hoc SQL queries against branches, results as table (with `--json`)
+- **`db log`** — Local audit trail with `show` and `clear` subcommands
+- **`db watch`** — Real-time branch list polling with configurable interval
+- **`db completion`** — Generate shell completion scripts for bash and zsh
+- **`db branch list --tags`** — Show local tags alongside branches in listing
+- **`db branch list --json`** — Now includes `protected` and `tag` fields
+- **Operation history** — All create/delete/rename/merge/restore/reset operations are logged locally
+- **Branch protection** — Delete and rename commands now check protection status
+- **Config schema extended** — New fields: `protected_branches`, `branch_tags`, `history`
 ### Added
 - Real schema diff between branches via `db branch diff` — connects to both branches and compares information_schema tables and columns, detecting added/removed/modified tables and column changes (#1)
 - Enhanced `db ci setup` workflow with weekly cron cleanup for orphaned preview branches (#2)
@@ -67,7 +86,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `db auth status` — show current auth status
 - Persistent configuration via `conf`, stored at `~/.config/in3pire-db/config.json` and validated with Zod (`NEON_API_KEY`, `NEON_PROJECT_ID`, `default_branch`), with `.env` support via `dotenv`
 
-[Unreleased]: https://github.com/IN3PIRE/db/compare/v0.1.4...main
+[Unreleased]: https://github.com/IN3PIRE/db/compare/v0.2.0...main
+[0.2.0]: https://github.com/IN3PIRE/db/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/IN3PIRE/db/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/IN3PIRE/db/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/IN3PIRE/db/compare/v0.1.1...v0.1.2

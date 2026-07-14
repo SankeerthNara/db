@@ -40,11 +40,12 @@ describe("config", () => {
   describe("getConfig", () => {
     it("should return defaults when nothing is stored", () => {
       const cfg = getConfig();
-      expect(cfg).toEqual({
-        NEON_API_KEY: undefined,
-        NEON_PROJECT_ID: undefined,
-        default_branch: "main",
-      });
+      expect(cfg.NEON_API_KEY).toBeUndefined();
+      expect(cfg.NEON_PROJECT_ID).toBeUndefined();
+      expect(cfg.default_branch).toBe("main");
+      expect(cfg.protected_branches).toEqual([]);
+      expect(cfg.branch_tags).toEqual({});
+      expect(cfg.history).toEqual([]);
     });
 
     it("should return stored values", () => {
@@ -54,6 +55,7 @@ describe("config", () => {
       expect(cfg.NEON_API_KEY).toBe("stored-key");
       expect(cfg.default_branch).toBe("staging");
       expect(cfg.NEON_PROJECT_ID).toBeUndefined();
+      expect(cfg.protected_branches).toEqual([]);
     });
   });
 
