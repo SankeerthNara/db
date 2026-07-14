@@ -4,35 +4,26 @@ import { z } from "zod";
 // Neon API client
 // ---------------------------------------------------------------------------
 
+const BranchSchema = z.object({
+  id: z.string(),
+  project_id: z.string(),
+  parent_id: z.string().nullable().optional(),
+  name: z.string(),
+  parent_lsn: z.string().nullable(),
+  parent_timestamp: z.string().nullable(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  logical_size: z.number().optional(),
+  physical_size: z.number().optional(),
+  protected: z.boolean().optional(),
+  default: z.boolean().optional(),
+  current_state: z.string().optional(),
+  expires_at: z.string().nullable().optional(),
+});
+
 const NeonApiResponse = z.object({
-  branches: z
-    .array(
-      z.object({
-        id: z.string(),
-        project_id: z.string(),
-        name: z.string(),
-        parent_lsn: z.string().nullable(),
-        parent_timestamp: z.string().nullable(),
-        created_at: z.string(),
-        updated_at: z.string(),
-        logical_size: z.number().optional(),
-        physical_size: z.number().optional(),
-      })
-    )
-    .optional(),
-  branch: z
-    .object({
-      id: z.string(),
-      project_id: z.string(),
-      name: z.string(),
-      parent_lsn: z.string().nullable(),
-      parent_timestamp: z.string().nullable(),
-      created_at: z.string(),
-      updated_at: z.string(),
-      logical_size: z.number().optional(),
-      physical_size: z.number().optional(),
-    })
-    .optional(),
+  branches: z.array(BranchSchema).optional(),
+  branch: BranchSchema.optional(),
   endpoints: z
     .array(
       z.object({
@@ -216,12 +207,27 @@ export class NeonClient {
   async updateBranch(
     projectId: string,
     branchId: string,
-    updates: { name?: string }
+    updates: { name?: string; archived?: boolean; expires_at?: string | null }
   ) {
     return this.request<z.infer<typeof NeonApiResponse>>(
       "PATCH",
       `/projects/${projectId}/branches/${branchId}`,
       { branch: updates }
+    );
+  }
+
+  async setBranchExpiration(
+    projectId: string,
+    branchId: string,
+    expiresAt: string | null
+  ) {
+    return this.updateBranch(projectId, branchId, { expires_at: expiresAt });
+  }
+
+  async setDefaultBranch(projectId: string, branchId: string) {
+    return this.request<z.infer<typeof NeonApiResponse>>(
+      "POST",
+      `/projects/${projectId}/branches/${branchId}/set_as_default`
     );
   }
 

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-15
+### Added
+- **`db branch schema`** — View full branch schema: tables, columns, types, nullability, defaults, and indexes. Supports `--json` and `--schema` flags.
+- **`db branch set-default`** — Set any branch as the project's default branch via the Neon API.
+- **`db branch set-expiration`** — Set or clear auto-deletion TTL on branches (ISO date or `never`).
+- **`db prune`** — Bulk delete stale branches with `--older-than`, `--except`, `--dry-run`, and `--force` options.
+- **`db seed`** — Seed a branch with data from a SQL file. Supports `--drop-first` to replace existing data.
+- **`db git sync`** — Sync Git branches to Neon branches. Auto-creates Neon branches for each Git branch with optional `--prune` to remove orphaned Neon branches.
+- **`db git status`** — Show mapping between Git branches and Neon branches, detecting mismatched and orphaned branches.
+### Changed
+- Fixed version mismatch in CLI (now displays `0.3.0` matching package.json).
+- Extended Neon API client with `setDefaultBranch()` and `setBranchExpiration()` methods.
+- Updated Neon API Zod schema to include `protected`, `default`, `parent_id`, `current_state`, and `expires_at` fields.
+
 ## [0.2.0] - 2026-07-14
 ### Added
 - **`db config`** — Manage local configuration with `list`, `get`, `set` subcommands
@@ -86,7 +100,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `db auth status` — show current auth status
 - Persistent configuration via `conf`, stored at `~/.config/in3pire-db/config.json` and validated with Zod (`NEON_API_KEY`, `NEON_PROJECT_ID`, `default_branch`), with `.env` support via `dotenv`
 
-[Unreleased]: https://github.com/IN3PIRE/db/compare/v0.2.0...main
+[Unreleased]: https://github.com/IN3PIRE/db/compare/v0.3.0...main
+[0.3.0]: https://github.com/IN3PIRE/db/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/IN3PIRE/db/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/IN3PIRE/db/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/IN3PIRE/db/compare/v0.1.2...v0.1.3

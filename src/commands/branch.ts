@@ -427,6 +427,162 @@ export function registerBranchCmd(program: Command) {
       }
     });
 
+  // -- set-default ------------------------------------------------------------
+  branch
+    .command("set-default")
+    .description("Set a branch as the project default")
+    .argument("<name-or-id>", "Branch name or ID")
+    .option("-p, --project <id>", "Project ID")
+    .action(async (identifier, options) => {
+      const spinner = ora("Setting default branch…").start();
+      try {
+        const client = getClient();
+        const projectId = await getProjectId(options.project);
+        const branch = await resolveBranch(client, projectId, identifier);
+        await client.setDefaultBranch(projectId, branch.id);
+        spinner.stop();
+        console.log(chalk.green(`✓ Branch "${branch.name}" is now the project default.`));
+        addLogEntry({ timestamp: new Date().toISOString(), action: "set-default", branch: branch.name });
+      } catch (err) {
+        spinner.fail("Failed to set default branch");
+        console.error(chalk.red(`  ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  // -- set-expiration ---------------------------------------------------------
+  branch
+    .command("set-expiration")
+    .description("Set auto-deletion TTL on a branch (ISO date or 'never')")
+    .argument("<name-or-id>", "Branch name or ID")
+    .argument("<expires-at>", 'Expiration ISO date (e.g. 2026-08-01T00:00:00Z) or "never" to clear')
+    .option("-p, --project <id>", "Project ID")
+    .action(async (identifier, expiresAt, options) => {
+      const spinner = ora("Setting branch expiration…").start();
+      try {
+        const client = getClient();
+        const projectId = await getProjectId(options.project);
+        const branch = await resolveBranch(client, projectId, identifier);
+        const value = expiresAt === "never" ? null : expiresAt;
+        await client.setBranchExpiration(projectId, branch.id, value);
+        spinner.stop();
+        if (value) {
+          console.log(chalk.green(`✓ Branch "${branch.name}" will expire at ${value}.`));
+        } else {
+          console.log(chalk.green(`✓ Expiration cleared for branch "${branch.name}".`));
+        }
+        addLogEntry({ timestamp: new Date().toISOString(), action: "set-expiration", branch: branch.name, detail: value ?? "cleared" });
+      } catch (err) {
+        spinner.fail("Failed to set expiration");
+        console.error(chalk.red(`  ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
+  // -- schema -----------------------------------------------------------------
+  branch
+    .command("schema")
+    .description("Show full schema details (tables, columns, types, indexes) for a branch")
+    .argument("<name-or-id>", "Branch name or ID")
+    .option("-p, --project <id>", "Project ID")
+    .option("--schema <schema>", "Database schema (default: public)")
+    .option("--json", "Output in JSON format")
+    .action(async (identifier, options) => {
+      const spinner = ora("Fetching schema…").start();
+      try {
+        const client = getClient();
+        const projectId = await getProjectId(options.project);
+        const branch = await resolveBranch(client, projectId, identifier);
+        const connStr = await client.getConnectionString(projectId, branch.id);
+        const schema = options.schema || "public";
+
+        const pgClient = new pg.Client(connStr);
+        await pgClient.connect();
+
+        const [tablesRes, columnsRes, indexesRes] = await Promise.all([
+          pgClient.query(
+            `SELECT table_name, table_type
+             FROM information_schema.tables
+             WHERE table_schema = $1
+             ORDER BY table_name`,
+            [schema]
+          ),
+          pgClient.query(
+            `SELECT c.table_name, c.column_name, c.data_type, c.is_nullable,
+                    c.column_default, c.character_maximum_length
+             FROM information_schema.columns c
+             WHERE c.table_schema = $1
+             ORDER BY c.table_name, c.ordinal_position`,
+            [schema]
+          ),
+          pgClient.query(
+            `SELECT tablename, indexname, indexdef
+             FROM pg_indexes
+             WHERE schemaname = $1
+             ORDER BY tablename, indexname`,
+            [schema]
+          ),
+        ]);
+
+        await pgClient.end();
+        spinner.stop();
+
+        if (options.json) {
+          const out = {
+            branch: branch.name,
+            schema,
+            tables: tablesRes.rows.map((t: any) => ({
+              name: t.table_name,
+              type: t.table_type,
+              columns: columnsRes.rows
+                .filter((c: any) => c.table_name === t.table_name)
+                .map((c: any) => ({
+                  name: c.column_name,
+                  type: c.data_type,
+                  nullable: c.is_nullable === "YES",
+                  default: c.column_default,
+                  max_length: c.character_maximum_length,
+                })),
+              indexes: indexesRes.rows
+                .filter((ix: any) => ix.tablename === t.table_name)
+                .map((ix: any) => ({
+                  name: ix.indexname,
+                  definition: ix.indexdef,
+                })),
+            })),
+          };
+          console.log(JSON.stringify(out, null, 2));
+          return;
+        }
+
+        if (tablesRes.rows.length === 0) {
+          console.log(chalk.dim(`No tables found in schema "${schema}".`));
+          return;
+        }
+
+        console.log(chalk.bold(`\n  Schema: ${branch.name} (${schema})\n`));
+        for (const t of tablesRes.rows) {
+          console.log(`  ${chalk.green("📦 " + t.table_name)}  ${chalk.dim(t.table_type)}`);
+          const cols = columnsRes.rows.filter((c: any) => c.table_name === t.table_name);
+          for (const c of cols) {
+            const nullable = c.is_nullable === "YES" ? chalk.dim(" NULL") : chalk.yellow(" NOT NULL");
+            const def = c.column_default ? chalk.cyan(` DEFAULT ${c.column_default}`) : "";
+            console.log(`    ${chalk.blue("│")} ${chalk.white(c.column_name)}  ${chalk.magenta(c.data_type)}${nullable}${def}`);
+          }
+          const ix = indexesRes.rows.filter((ix: any) => ix.tablename === t.table_name);
+          for (const i of ix) {
+            console.log(`    ${chalk.yellow("├")} ${chalk.dim("INDEX")} ${i.indexname}`);
+          }
+          console.log();
+        }
+        console.log(chalk.dim(`  ${tablesRes.rows.length} table(s), ${columnsRes.rows.length} column(s), ${indexesRes.rows.length} index(es)\n`));
+      } catch (err) {
+        spinner.fail("Failed to fetch schema");
+        console.error(chalk.red(`  ${(err as Error).message}`));
+        process.exit(1);
+      }
+    });
+
   // -- merge ------------------------------------------------------------------
   branch
     .command("merge")

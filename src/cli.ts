@@ -13,6 +13,9 @@ import { registerQueryCmd } from "./commands/query.js";
 import { registerLogCmd } from "./commands/log.js";
 import { registerWatchCmd } from "./commands/watch.js";
 import { registerCompletionCmd } from "./commands/completion.js";
+import { registerPruneCmd } from "./commands/prune.js";
+import { registerSeedCmd } from "./commands/seed.js";
+import { registerGitCmd } from "./commands/git.js";
 
 // Load .env if available
 try {
@@ -27,7 +30,7 @@ const program = new Command();
 program
   .name("db")
   .description("Database branch CLI — Git-like branching for Neon Postgres")
-  .version("0.1.0")
+  .version("0.3.0")
   .helpOption("-h, --help", "Show help")
   .addHelpText(
     "after",
@@ -49,8 +52,15 @@ Examples:
    db export main -o schema.sql           Export schema to file
    db query main "SELECT * FROM users"    Run SQL query
    db log show                            Show branch operation history
-   db watch                               Watch branches in real-time
-   db completion bash                     Generate bash completions
+    db watch                               Watch branches in real-time
+    db branch set-default main             Set branch as project default
+    db branch set-expiration feat ...       Set TTL on a branch
+    db branch schema main                  Show full schema (tables, columns, indexes)
+    db prune --older-than 30               Bulk delete stale branches
+    db seed my-branch ./data.sql           Seed branch with data from SQL file
+    db git sync                            Sync Git branches with Neon branches
+    db git status                          Show Git ↔ Neon branch mapping
+    db completion bash                     Generate bash completions
 
 📖 Docs: https://github.com/IN3PIRE/db
   `
@@ -69,6 +79,9 @@ registerQueryCmd(program);
 registerLogCmd(program);
 registerWatchCmd(program);
 registerCompletionCmd(program);
+registerPruneCmd(program);
+registerSeedCmd(program);
+registerGitCmd(program);
 
 // Allow `db <cmd>` without subcommand prefix for common ops
 program
