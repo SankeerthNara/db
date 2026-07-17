@@ -19,12 +19,12 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square" alt="MIT"></a>
-  <a href="https://github.com/IN3PIRE/db/releases"><img src="https://img.shields.io/github/v/release/IN3PIRE/db?style=flat-square&color=6C47FF" alt="Release"></a>
-  <a href="https://github.com/IN3PIRE/db"><img src="https://img.shields.io/github/stars/IN3PIRE/db?style=flat-square&color=ff6b6b" alt="Stars"></a>
-  <a href="#"><img src="https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square" alt="TypeScript"></a>
-  <a href="#"><img src="https://img.shields.io/badge/Node-18+-339933?style=flat-square" alt="Node"></a>
-  <a href="https://console.neon.tech"><img src="https://img.shields.io/badge/Neon-API-00E599?style=flat-square" alt="Neon"></a>
+  <a href="LICENSE"><img src="https://shieldcn.dev/github/IN3PIRE/db/license.svg?variant=branded&size=xs&mode=light" alt="MIT"></a>
+  <a href="https://github.com/IN3PIRE/db/releases"><img src="https://shieldcn.dev/badge/release-v0.4.0-6C47FF.svg?variant=branded&size=xs&mode=light" alt="Release"></a>
+  <a href="https://github.com/IN3PIRE/db"><img src="https://shieldcn.dev/github/IN3PIRE/db/stars.svg?variant=branded&size=xs&mode=light" alt="Stars"></a>
+  <a href="#"><img src="https://shieldcn.dev/badge/TypeScript-5.7-3178C6.svg?variant=branded&size=xs&mode=light" alt="TypeScript"></a>
+  <a href="#"><img src="https://shieldcn.dev/badge/Node-18+-339933.svg?variant=branded&size=xs&mode=light" alt="Node"></a>
+  <a href="https://console.neon.tech"><img src="https://shieldcn.dev/badge/powered%20by-Neon-00E599.svg?variant=branded&size=xs&mode=light&logo=neon&logoColor=fff" alt="Neon"></a>
 </p>
 
 <br>
@@ -235,7 +235,7 @@ Questions, ideas, or issues? [Open a discussion](https://github.com/IN3PIRE/db/d
 
 <p align="center">
   <a href="https://github.com/IN3PIRE/db/stargazers">
-    <img src="https://img.shields.io/github/stars/IN3PIRE/db?style=social" alt="Star">
+    <img src="https://shieldcn.dev/github/IN3PIRE/db/stars.svg?variant=branded&size=sm&mode=light" alt="Star">
   </a>
 </p>
 
