@@ -25,6 +25,13 @@ export function registerBranchCmd(program: Command) {
   branch
     .command("list")
     .description("List all branches in a project")
+    .addHelpText("after", `
+Examples:
+   db branch list
+   db branch list --json
+   db branch list --tags
+   db branch list --project proj_abc123
+  `)
     .option("-p, --project <id>", "Project ID")
     .option("--json", "Output in JSON format (no spinner)")
     .option("--tags", "Show local tags alongside branches")
@@ -88,6 +95,12 @@ export function registerBranchCmd(program: Command) {
   branch
     .command("create")
     .description("Create a new database branch")
+    .addHelpText("after", `
+Examples:
+   db branch create feat/awesome
+   db branch create feat/awesome --from main
+   db branch create feat/awesome --latest
+  `)
     .argument("<name>", "Branch name")
     .option("-p, --project <id>", "Project ID")
     .option("-f, --from <branch>", "Parent branch name or ID")
@@ -141,11 +154,17 @@ export function registerBranchCmd(program: Command) {
     .command("delete")
     .alias("rm")
     .description("Delete a database branch")
+    .addHelpText("after", `
+Examples:
+   db branch delete feat/awesome
+   db branch rm feat/awesome --force
+  `)
     .argument("<name-or-id>", "Branch name or ID")
     .option("-p, --project <id>", "Project ID")
     .option("-f, --force", "Skip confirmation")
     .option("-y, --yes", "Skip confirmation (alias for --force)")
     .action(async (identifier, options) => {
+      const spinner = ora("Resolving branch…").start();
       try {
         const client = getClient();
         const projectId = await getProjectId(options.project);
@@ -153,9 +172,12 @@ export function registerBranchCmd(program: Command) {
         const branch = await resolveBranch(client, projectId, identifier);
 
         if (isBranchProtected(branch.name)) {
+          spinner.stop();
           console.error(chalk.red(`Branch "${branch.name}" is protected. Unprotect it first with: db branch unprotect ${branch.name}`));
           process.exit(1);
         }
+
+        spinner.stop();
 
         if (!(options.force || options.yes)) {
           const readline = (await import("node:readline")).default;
@@ -176,7 +198,7 @@ export function registerBranchCmd(program: Command) {
           }
         }
 
-        const spinner = ora("Deleting branch…").start();
+        spinner.start("Deleting branch…");
         await client.deleteBranch(projectId, branch.id);
         spinner.stop();
         console.log(chalk.green(`✓ Branch "${branch.name}" deleted.`));
@@ -187,6 +209,7 @@ export function registerBranchCmd(program: Command) {
           branch: branch.name,
         });
       } catch (err) {
+        spinner.fail("Failed to delete branch");
         console.error(chalk.red(`  ${(err as Error).message}`));
         process.exit(1);
       }
@@ -196,10 +219,23 @@ export function registerBranchCmd(program: Command) {
   branch
     .command("rename")
     .description("Rename a branch")
+    .addHelpText("after", `
+Examples:
+   db branch rename feat/old feat/new
+  `)
     .argument("<old-name>", "Current branch name or ID")
     .argument("<new-name>", "New branch name")
     .option("-p, --project <id>", "Project ID")
     .action(async (oldName, newName, options) => {
+      if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(newName)) {
+        console.error(
+          chalk.red(
+            "Invalid branch name. Must start with a letter or number and contain only letters, numbers, hyphens, underscores, and dots."
+          )
+        );
+        process.exit(1);
+      }
+
       let spinner: ReturnType<typeof ora> | undefined;
       try {
         const client = getClient();
@@ -233,8 +269,14 @@ export function registerBranchCmd(program: Command) {
   branch
     .command("inspect")
     .description("Show detailed branch information")
+    .addHelpText("after", `
+Examples:
+   db branch inspect feat/awesome
+   db branch inspect fea12345 --json
+  `)
     .argument("<name-or-id>", "Branch name or ID")
     .option("-p, --project <id>", "Project ID")
+    .option("--json", "Output in JSON format")
     .action(async (identifier, options) => {
       const spinner = ora("Fetching branch details…").start();
       try {
@@ -242,6 +284,25 @@ export function registerBranchCmd(program: Command) {
         const projectId = await getProjectId(options.project);
         const branch = await resolveBranch(client, projectId, identifier);
         spinner.stop();
+
+        if (options.json) {
+          const out = {
+            id: branch.id,
+            name: branch.name,
+            project_id: branch.project_id,
+            parent_id: branch.parent_id ?? null,
+            logical_size: branch.logical_size ?? null,
+            physical_size: branch.physical_size ?? null,
+            protected: isBranchProtected(branch.name),
+            tag: getTag(branch.name) ?? null,
+            created_at: branch.created_at,
+            updated_at: branch.updated_at,
+            parent_lsn: branch.parent_lsn,
+            expires_at: branch.expires_at ?? null,
+          };
+          console.log(JSON.stringify(out, null, 2));
+          return;
+        }
 
         console.log(renderBranchDetail(branch));
         const tag = getTag(branch.name);
@@ -259,6 +320,12 @@ export function registerBranchCmd(program: Command) {
   branch
     .command("diff")
     .description("Show schema diff between two branches")
+    .addHelpText("after", `
+Examples:
+   db branch diff feat/awesome main
+   db branch diff feat/awesome
+   db branch diff feat/awesome main --schema custom
+  `)
     .argument("<branch-a>", "First branch name or ID")
     .argument("[branch-b]", "Second branch name or ID (default: parent)")
     .option("-p, --project <id>", "Project ID")
@@ -311,6 +378,10 @@ export function registerBranchCmd(program: Command) {
   branch
     .command("protect")
     .description("Protect a branch from accidental deletion or rename")
+    .addHelpText("after", `
+Examples:
+   db branch protect main
+  `)
     .argument("<name-or-id>", "Branch name or ID")
     .option("-p, --project <id>", "Project ID")
     .action(async (identifier, options) => {
@@ -484,6 +555,12 @@ export function registerBranchCmd(program: Command) {
   branch
     .command("schema")
     .description("Show full schema details (tables, columns, types, indexes) for a branch")
+    .addHelpText("after", `
+Examples:
+   db branch schema main
+   db branch schema main --json
+   db branch schema main --schema custom
+  `)
     .argument("<name-or-id>", "Branch name or ID")
     .option("-p, --project <id>", "Project ID")
     .option("--schema <schema>", "Database schema (default: public)")
@@ -588,6 +665,11 @@ export function registerBranchCmd(program: Command) {
   branch
     .command("merge")
     .description("Merge schema changes from source branch into target branch")
+    .addHelpText("after", `
+Examples:
+   db branch merge feat/awesome main
+   db branch merge feat/awesome main --dry-run
+  `)
     .argument("<source>", "Source branch (changes from)")
     .argument("<target>", "Target branch (changes into)")
     .option("-p, --project <id>", "Project ID")
@@ -686,6 +768,11 @@ export function registerBranchCmd(program: Command) {
   branch
     .command("search")
     .description("Search branches by name pattern")
+    .addHelpText("after", `
+Examples:
+   db branch search feat
+   db branch search feat --json
+  `)
     .argument("<pattern>", "Branch name pattern (case-insensitive substring match)")
     .option("-p, --project <id>", "Project ID")
     .option("--json", "Output in JSON format")

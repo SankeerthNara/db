@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-20
+### Added
+- **`db branch inspect --json`** — JSON output flag for `db branch inspect` showing all branch details including protection status and tag (#39).
+- **`db version`** — New command to display version information (#37).
+- **Usage examples** — Per-command usage examples shown in `--help` output for all branch subcommands (#36).
+### Changed
+- **`db branch rename`** — Now validates the new branch name against naming rules before renaming (#38).
+- **`db branch delete`** — Spinner now covers the full operation including branch resolution (#40).
+
 ## [0.4.0] - 2026-07-17
 ### Added
 - **`db doctor`** — Diagnostic command to validate config, API key, project ID, and API connectivity with a single report.
@@ -108,7 +117,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `db auth status` — show current auth status
 - Persistent configuration via `conf`, stored at `~/.config/in3pire-db/config.json` and validated with Zod (`NEON_API_KEY`, `NEON_PROJECT_ID`, `default_branch`), with `.env` support via `dotenv`
 
-[Unreleased]: https://github.com/IN3PIRE/db/compare/v0.4.0...main
+[Unreleased]: https://github.com/IN3PIRE/db/compare/v0.5.0...main
+[0.5.0]: https://github.com/IN3PIRE/db/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/IN3PIRE/db/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/IN3PIRE/db/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/IN3PIRE/db/compare/v0.1.4...v0.2.0
